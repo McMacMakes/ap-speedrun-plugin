@@ -8,11 +8,8 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetConfig;
-import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.game.chatbox.ChatboxTextMenuInput;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.Text;
@@ -55,7 +52,6 @@ public class APSpeedRunPlugin extends Plugin
 			event.consume();
 			return;
 		}
-
 	}
 
 	@Subscribe
@@ -84,67 +80,18 @@ public class APSpeedRunPlugin extends Plugin
 		menuEntry.onClick(DISABLED);
 	}
 
-	private void logWidgetInfo(Widget widget, boolean logChildren){
-		if (widget != null) {
-
-			//logWidgetInfo(widget.getParent(), false);
-			log.info("id:{}",widget.getId());
-			log.info("name:{}",widget.getName());
-			log.info("type:{}",String.valueOf(widget.getType()));
-			log.info("parent:{}",widget.getParentId());
-
-			Widget[] childWidgets = widget.getChildren();
-			Widget[] staticChildWidgets = widget.getStaticChildren();
-			Widget[] dynamicChildWidgets = widget.getDynamicChildren();
-			Widget[] nestedChildWidgets = widget.getNestedChildren();
-
-			log.info("number of children:{}", childWidgets != null ? childWidgets.length : 0);
-			log.info("number of static children:{}", staticChildWidgets != null ? staticChildWidgets.length : 0);
-			log.info("number of dynamic children:{}", dynamicChildWidgets != null ? dynamicChildWidgets.length : 0);
-			log.info("number of nested children:{}", nestedChildWidgets != null ? nestedChildWidgets.length : 0);
-
-			if (logChildren) {
-                if (childWidgets != null) {
-                    for (Widget child : childWidgets) {
-                        logWidgetInfo(child, true);
-                    }
-                }
-
-                if (staticChildWidgets != null) {
-                    for (Widget child : staticChildWidgets) {
-                        logWidgetInfo(child, true);
-                    }
-                }
-
-                if (dynamicChildWidgets != null) {
-                    for (Widget child : dynamicChildWidgets) {
-                        logWidgetInfo(child, true);
-                    }
-                }
-
-				if (nestedChildWidgets != null) {
-					for (Widget child : nestedChildWidgets) {
-						logWidgetInfo(child, true);
-					}
-				}
-            }
-		}
-	}
-
 
 	@Subscribe
 	public void  onWidgetLoaded(WidgetLoaded widgetLoaded)
 	{
 		int groupId = widgetLoaded.getGroupId();
 		if (groupId == InterfaceID.CHATMENU)
-//		if (groupId == InterfaceID.CHATBOX)
 		{
 
 			Widget widget = client.getWidget(InterfaceID.Chatmenu.OPTIONS);
 
             if (widget != null) {
 				optionsParentWidget = widget;
-				//logWidgetInfo(parent, true);
             } else log.info("widget with ID {} not found",InterfaceID.Chatmenu.OPTIONS);
         }
 	}
@@ -174,10 +121,8 @@ public class APSpeedRunPlugin extends Plugin
 	private void handleOptionsParentWidget()
 	{
 		if (optionsParentWidget != null){
-//			logWidgetInfo(optionsParentWidget, true);
 			Widget[] dynamicChildWidgets = optionsParentWidget.getDynamicChildren();
 			if (dynamicChildWidgets != null) {
-//				for (Widget child : dynamicChildWidgets) {
 				for (int i = 0; i < dynamicChildWidgets.length; i++) {
 					Widget child = dynamicChildWidgets[i];
 					if (isLockedChatOption(child)) {
@@ -188,14 +133,12 @@ public class APSpeedRunPlugin extends Plugin
 			}
 
 		}
-//		optionsParentWidget = null;
 	}
 
 	@Subscribe
 	public void onClientTick(ClientTick clientTick){
 		handleOptionsParentWidget();
 	}
-
 
 	@Subscribe
 	public void onChatMessage(ChatMessage chatMessage)
@@ -209,7 +152,6 @@ public class APSpeedRunPlugin extends Plugin
 		if (chatMessage.getMessage().contains("completed") && chatMessage.getMessage().contains(questName))
 			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Successfully detected completion.", null);
 	}
-
 
 	@Provides
 	APSpeedRunConfig provideConfig(ConfigManager configManager)
