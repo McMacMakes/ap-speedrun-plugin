@@ -8,12 +8,12 @@ import net.runelite.client.config.ConfigItem;
 public interface APSpeedRunConfig extends Config
 {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+		keyName = "questName",
+		name = "Goal Quest Name",
+		description = "The name of the quest required to complete the final goal."
 	)
-	default String greeting()
+	default String questName()
 	{
-		return "Hello";
+		return "Cook's Assistant";
 	}
 }
