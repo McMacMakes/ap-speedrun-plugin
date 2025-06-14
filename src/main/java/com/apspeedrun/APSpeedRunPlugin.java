@@ -23,9 +23,13 @@ import java.util.function.Consumer;
 )
 public class APSpeedRunPlugin extends Plugin
 {
+	private final Consumer<MenuEntry> DISABLED = e -> {
+	};
+	Widget optionsParentWidget;
+	List<String> lockedChatOptions = List.of("What's wrong?", "Nice hat!", "blah");
+	Map<Integer, Widget> currentLockedWidgets = new HashMap<>();
 	@Inject
 	private Client client;
-
 	@Inject
 	private APSpeedRunConfig config;
 
@@ -41,38 +45,41 @@ public class APSpeedRunPlugin extends Plugin
 		log.info("Example stopped!");
 	}
 
-	Widget optionsParentWidget;
-
-	private final Consumer<MenuEntry> DISABLED = e -> { };
-
 	@Subscribe
-	public void onMenuOptionClicked(MenuOptionClicked event) {
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
 		// If the entry is disabled, consume the event.
-		if (event.getMenuEntry().onClick() == DISABLED) {
+		if (event.getMenuEntry().onClick() == DISABLED)
+		{
 			event.consume();
 			return;
 		}
 	}
 
 	@Subscribe
-	public void  onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
+	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
 	{
 		MenuEntry menuEntry = menuEntryAdded.getMenuEntry();
 
-		if (menuEntry.getType() == MenuAction.WIDGET_CONTINUE) handleMenuEntry(menuEntry);
+		if (menuEntry.getType() == MenuAction.WIDGET_CONTINUE)
+		{
+			handleWidgetContinueMenuEntry(menuEntry);
+		}
 	}
 
-	private void handleMenuEntry(MenuEntry menuEntry) {
-		boolean match = Objects.equals(menuEntry.getOption(), "Continue") &&
-				currentLockedWidgets.containsKey(menuEntry.getParam0()) &&
-				currentLockedWidgets.get(menuEntry.getParam0()).getId() == menuEntry.getParam1();
-		if(match) disableMenuEntry(menuEntry);
+	private void handleWidgetContinueMenuEntry(MenuEntry menuEntry)
+	{
+		boolean isLockedWidgetEntry = Objects.equals(menuEntry.getOption(), "Continue") &&
+			currentLockedWidgets.containsKey(menuEntry.getParam0()) &&
+			currentLockedWidgets.get(menuEntry.getParam0()).getId() == menuEntry.getParam1();
+		if (isLockedWidgetEntry)
+		{
+			disableMenuEntry(menuEntry);
+		}
 	}
 
 	private void disableMenuEntry(MenuEntry menuEntry)
 	{
-		log.info("option:{}",menuEntry.getOption());
-		log.info("target:{}",menuEntry.getTarget());
 		String option = Text.removeFormattingTags(menuEntry.getOption());
 		String target = Text.removeFormattingTags(menuEntry.getTarget());
 		menuEntry.setOption("<col=808080>(Locked) " + option);
@@ -80,9 +87,8 @@ public class APSpeedRunPlugin extends Plugin
 		menuEntry.onClick(DISABLED);
 	}
 
-
 	@Subscribe
-	public void  onWidgetLoaded(WidgetLoaded widgetLoaded)
+	public void onWidgetLoaded(WidgetLoaded widgetLoaded)
 	{
 		int groupId = widgetLoaded.getGroupId();
 		if (groupId == InterfaceID.CHATMENU)
@@ -90,14 +96,22 @@ public class APSpeedRunPlugin extends Plugin
 
 			Widget widget = client.getWidget(InterfaceID.Chatmenu.OPTIONS);
 
-            if (widget != null) {
+			if (widget != null)
+			{
 				optionsParentWidget = widget;
-            } else log.info("widget with ID {} not found",InterfaceID.Chatmenu.OPTIONS);
-        }
+			}
+			else
+			{
+				log.info("widget with ID {} not found", InterfaceID.Chatmenu.OPTIONS);
+			}
+		}
 	}
 
-	public void onWidgetClosed(WidgetClosed widgetClosed){
-		if (widgetClosed.getGroupId() == InterfaceID.CHATMENU) {
+	@Subscribe
+	public void onWidgetClosed(WidgetClosed widgetClosed)
+	{
+		if (widgetClosed.getGroupId() == InterfaceID.CHATMENU)
+		{
 			currentLockedWidgets.clear();
 			optionsParentWidget = null;
 		}
@@ -106,12 +120,8 @@ public class APSpeedRunPlugin extends Plugin
 	private void disableChatOptionWidget(Widget widget)
 	{
 		widget.setTextColor(8421504);
-		widget.setOnKeyListener(null);
+		widget.setOnKeyListener((Object[]) null);
 	}
-
-	List<String> lockedChatOptions = List.of("What's wrong?","Nice hat!","blah");
-	Map<Integer, Widget> currentLockedWidgets = new HashMap<>();
-
 
 	private boolean isLockedChatOption(Widget optionWidget)
 	{
@@ -120,37 +130,48 @@ public class APSpeedRunPlugin extends Plugin
 
 	private void handleOptionsParentWidget()
 	{
-		if (optionsParentWidget != null){
-			Widget[] dynamicChildWidgets = optionsParentWidget.getDynamicChildren();
-			if (dynamicChildWidgets != null) {
-				for (int i = 0; i < dynamicChildWidgets.length; i++) {
-					Widget child = dynamicChildWidgets[i];
-					if (isLockedChatOption(child)) {
-						currentLockedWidgets.putIfAbsent(i,child);
-						disableChatOptionWidget(child);
-					}
-				}
+		if (optionsParentWidget == null)
+		{
+			return;
+		}
+		Widget[] dynamicChildWidgets = optionsParentWidget.getDynamicChildren();
+		if (dynamicChildWidgets == null)
+		{
+			return;
+		}
+		for (int i = 0; i < dynamicChildWidgets.length; i++)
+		{
+			Widget child = dynamicChildWidgets[i];
+			if (isLockedChatOption(child))
+			{
+				currentLockedWidgets.putIfAbsent(i, child);
+				disableChatOptionWidget(child);
 			}
-
 		}
 	}
 
 	@Subscribe
-	public void onClientTick(ClientTick clientTick){
+	public void onClientTick(ClientTick clientTick)
+	{
 		handleOptionsParentWidget();
 	}
 
 	@Subscribe
 	public void onChatMessage(ChatMessage chatMessage)
 	{
-		if (chatMessage.getType()!=ChatMessageType.GAMEMESSAGE) return;
+		if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE)
+		{
+			return;
+		}
 		detectQuestCompletion(config.questName(), chatMessage);
 	}
 
 	public void detectQuestCompletion(String questName, ChatMessage chatMessage)
 	{
 		if (chatMessage.getMessage().contains("completed") && chatMessage.getMessage().contains(questName))
+		{
 			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Successfully detected completion.", null);
+		}
 	}
 
 	@Provides
